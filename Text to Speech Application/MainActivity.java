@@ -1,47 +1,70 @@
-package com.example.texttospeechapplication;
+package com.example.speechapplication;
 
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
-import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    TextToSpeech t1;
-    EditText e1;
+
+    EditText editText;
+    Button convertButton;
+    TextToSpeech textToSpeech;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        e1=findViewById(R.id.editText);
-        t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if(status!=TextToSpeech.ERROR)
-                {
-                    t1.setLanguage(Locale.UK);
-                }
-            }
-        });
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        editText = findViewById(R.id.editText);
+        convertButton = findViewById(R.id.convertButton);
+
+        textToSpeech = new TextToSpeech(
+                this,
+                status -> {
+                    if (status == TextToSpeech.SUCCESS) {
+                        int result = textToSpeech.setLanguage(Locale.UK);
+
+                        if (result == TextToSpeech.LANG_MISSING_DATA ||
+                                result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                            Toast.makeText(this,
+                                    "UK English is not supported",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+        convertButton.setOnClickListener(v -> convert());
     }
-    public void convert(View view)
-    {
-        String tospeak =e1.getText().toString();
-        t1.speak(tospeak,TextToSpeech.QUEUE_FLUSH,null);
+
+    private void convert() {
+        String text = editText.getText().toString().trim();
+
+        if (text.isEmpty()) {
+            Toast.makeText(this,
+                    "Please enter some text",
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            textToSpeech.speak(
+                    text,
+                    TextToSpeech.QUEUE_FLUSH,
+                    null,
+                    "TTS_ID"
+            );
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
+        super.onDestroy();
     }
 }
